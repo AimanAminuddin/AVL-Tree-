@@ -1,0 +1,510 @@
+import java.util.*;
+import java.io.*;
+class TeamV1 implements Comparable<TeamV1>{
+    public int id;
+    public int score;
+    public int penalty;
+
+    public TeamV1(int id){
+        this.id = id;
+    }
+
+    public int getID(){
+        return id;
+    }
+
+    public int getScore(){
+        return score;
+    }
+
+    public int getPenalty(){
+        return penalty;
+    }
+
+    public void solvedproblem(int penalty){
+        score += 1;
+        this.penalty += penalty;}
+
+    public int compareTo(TeamV1 team){
+        if (getScore() != team.getScore()){
+            if (getScore() > team.getScore()){
+                return -1;
+            }
+            return 1;
+        }
+
+        else if (getPenalty() != team.getPenalty()){
+            if (getPenalty() < team.getPenalty()){
+                return -1;
+            }
+            return 1;
+        }
+
+        else{
+            if (getID() < team.getID()){
+                return -1;
+            }
+
+            else if (getID() > team.getID()){
+                return 1;
+            }
+
+            return 0; // referring to the same team
+        }
+
+
+    }
+}
+class TeamNode{
+    public TeamNode parent,left,right;
+    public TeamV1 key;
+    public int height;
+    public int size;
+
+    // Constructor
+    public TeamNode(TeamV1 key){
+        this.key = key;
+        height = 0;
+        size = 1;
+        parent = null;
+        left = null;
+        right = null;
+    }
+
+
+}
+
+class TeamAVL {
+    public TeamNode root;
+
+    // Constructor
+    public TeamAVL() {
+        root = null;
+    }
+
+    public boolean isEmpty() {
+        return root == null;
+    }
+
+    public TeamV1 search(TeamV1 team) {
+        TeamNode node = search(root, team);
+        if (node == null) {
+            return null;
+        }
+        return team;
+    }
+
+    public TeamNode search(TeamNode node, TeamV1 team) {
+        if (node == null) {
+            return null;
+        }
+
+        int compare = team.compareTo(node.key);
+        /*
+        a) higher scores 
+        b) lesser penalty 
+        c) smaller id would result the item to be the front of array
+        treat Team as a small number 
+         */
+
+        // similar to AVL Tree, < 0 means lesser than key
+        if (compare < 0) {
+            return search(node.left, team);
+        } else if (compare > 0) {
+            return search(node.right, team);
+        }
+
+        return node;
+    }
+
+    public TeamV1 findMin() {
+        return findMin(root);
+    }
+
+    public TeamV1 findMin(TeamNode node) {
+        if (isEmpty()) {
+            return null;
+        }
+        if (node.left != null) {
+            return findMin(node.left);
+        }
+        return node.key;
+    }
+
+    public TeamV1 findMax() {
+        return findMax(root);
+    }
+
+    public TeamV1 findMax(TeamNode node) {
+        if (isEmpty()) {
+            return null;
+        }
+        if (node.right != null) {
+            return findMax(node.right);
+        }
+
+        return node.key;
+    }
+
+    public TeamV1 successor(TeamV1 team) {
+        TeamNode node = search(root, team);
+
+        if (node == null) {
+            return null;
+        }
+
+        return successor(node);
+    }
+
+    public TeamV1 successor(TeamNode node) {
+        if (node.right != null) {
+            return findMin(node.right);
+        }
+
+        TeamNode curr = node;
+        TeamNode par = curr.parent;
+
+        while (par != null && par.right == curr) {
+            curr = par;
+            par = curr;
+        }
+        if (par == null) {
+            return null;
+        }
+
+        return par.key;
+    }
+
+    public TeamV1 predecessor(TeamV1 team) {
+        TeamNode node = search(root, team);
+        if (node == null) {
+            return null;
+        }
+
+        return predecessor(node);
+    }
+
+    public TeamV1 predecessor(TeamNode node) {
+        if (node.left != null) {
+            return findMax(node.left);
+        }
+
+        TeamNode curr = node;
+        TeamNode par = curr.parent;
+        while (par != null && curr == par.left) {
+            curr = par;
+            par = curr.parent;
+        }
+
+        if (par == null) {
+            return null;
+        }
+
+        return par.key;
+    }
+
+    public void inorder() {
+        inorder(root);
+        System.out.println();
+    }
+
+    public void inorder(TeamNode node) {
+        if (node == null) {
+            return;
+        } else {
+            inorder(node.left);
+            System.out.printf(" %d", node.key);
+            inorder(node.right);
+        }
+    }
+
+    public void insert(TeamV1 team) {
+        root = insert(root, team);
+    }
+
+    public TeamNode insert(TeamNode node, TeamV1 team) {
+        if (node == null) {
+            return new TeamNode(team);
+        }
+
+        int comparator = team.compareTo(node.key);
+        if (comparator < 0) {
+            node.left = insert(node.left, team);
+            node.left.parent = node;
+        } else {
+            node.right = insert(node.right, team);
+            node.right.parent = node;
+        }
+
+        // update the height,size of node before rebalancing
+        node.height = Math.max(getheight(node.left), getheight(node.right)) + 1;
+        node.size = getsize(node.left) + getsize(node.right) + 1;
+
+        // Perform Rotations if required
+        node = rebalance(node);
+        return node;
+    }
+
+    public void delete(TeamV1 team) {
+        root = delete(root, team);
+    }
+
+    public TeamNode delete(TeamNode node, TeamV1 team) {
+        if (node == null) {
+            return node;
+        }
+        int comparator = team.compareTo(node.key);
+
+        if (comparator < 0) {
+            node.left = delete(node.left, team);
+        } else if (comparator > 0) {
+            node.right = delete(node.right, team);
+        } else {
+            if (node.right == null && node.left == null) {
+                node = null;
+            } else if (node.right == null) {
+                node.left.parent = node.parent;
+                node = node.left;
+            } else if (node.left == null) {
+                node.right.parent = node.parent;
+                node = node.right;
+            } else {
+                TeamV1 successorV = successor(team);
+                node.key = successorV;         // replace this key with the successor's key
+                node.right = delete(node.right, successorV);
+            }
+
+
+        }
+
+        // update the height,size of the affected nodes to check if need rebalancing
+        // only update if node is node is not null / i.e. not deleted, if not will get
+        // NullPointer Exception Thrown at you
+        if (node != null) {
+            node.height = Math.max(getheight(node.left), getheight(node.right)) + 1;
+            node.size = getsize(node.left) + getsize(node.right) + 1;
+            node = rebalance(node);
+        }
+
+        // Perform Rotations if required
+
+        return node;
+    }
+
+    public int balancefactor(TeamNode node) {
+        return getheight(node.left) - getheight(node.right);
+    }
+
+    public TeamNode rotateLeft(TeamNode node) {
+        // Must hold true: node.right != null
+        TeamNode w = node.right;
+        w.parent = node.parent;
+        node.parent = w;
+        node.right = w.left;
+        if (w.left != null) {
+            w.left.parent = node;
+        }
+        w.left = node;
+
+        // update the height of node,followed by w
+        node.height = Math.max(getheight(node.left), getheight(node.right)) + 1;
+        w.height = Math.max(getheight(w.left), getheight(w.right)) + 1;
+
+        // need update the size of node, followed by w
+        node.size = getsize(node.left) + getsize(node.right) + 1;
+        w.size = getsize(w.left) + getsize(w.right) + 1;
+
+        return w;
+    }
+
+    public TeamNode rotateRight(TeamNode node) {
+        // need to ensure that node.left is not null
+        TeamNode w = node.left;
+        w.parent = node.parent;
+        node.parent = w;
+        node.left = w.right;
+        if (w.right != null) {
+            w.right.parent = node;
+        }
+        w.right = node;
+
+        // update the height of the node, the w
+        node.height = Math.max(getheight(node.left), getheight(node.right)) + 1;
+        w.height = Math.max(getheight(w.left), getheight(w.right)) + 1;
+
+
+        // update node first as it is on a lower level than w
+        node.size = getsize(node.left) + getsize(node.right) + 1;
+        w.size = getsize(w.left) + getsize(w.right) + 1;
+
+
+        return w;
+    }
+
+    public TeamNode rebalance(TeamNode node) {
+        // compute the balance factor of node
+        int bf = balancefactor(node);
+        // node is height balanced iff |node.left - node.right| <= 1
+        // left subtree is larger than right subtree
+        if (bf == 2) {
+            int leftbf = balancefactor(node.left);
+            if (0 <= leftbf && leftbf <= 1) {
+                // left left case
+                // update the heights,sizes of affected nodes
+                return rotateRight(node);
+            } else if (leftbf == -1) {
+                // left right case
+                // rotate the left node left first
+                node.left = rotateLeft(node.left);
+                // rotate node rightwards
+                return rotateRight(node);
+            }
+        } else if (bf == -2) {
+            int rightbf = balancefactor(node.right);
+            // right right case
+            if (-1 <= rightbf && rightbf <= 0) {
+                return rotateLeft(node);
+            } else if (rightbf == 1) {
+                // right left case
+                node.right = rotateRight(node.right);
+                return rotateLeft(node);
+            }
+        }
+
+        return node;
+    }
+
+    public int getsize(){
+        return getsize(root);
+    }
+
+    public int getsize(TeamNode node){
+        if (node == null){
+            return 0;
+        }
+
+        return node.size;
+    }
+
+    public int getheight(){
+        return getheight(root);
+    }
+
+    public int getheight(TeamNode node){
+        if (node == null){
+            return -1;
+        }
+        return node.height;
+    }
+
+    public int rank(TeamV1 team){
+        return rank(root,team);
+    }
+
+    public int rank(TeamNode node,TeamV1 team){
+        if (node == null){
+            return 0;
+        }
+
+        int comparator = team.compareTo(node.key);
+
+        if (node.key == team){
+            return getsize(node.left) + 1;
+        }
+
+        else if (comparator < 0){
+            return rank(node.left,team);
+        }
+
+        return rank(node.right,team) + rank(node,node.key);
+    }
+
+
+
+}
+public class TestTeamAVL {
+    public static void main(String[] args){
+        Kattio kat = new Kattio(System.in,System.out);
+        int num = kat.getInt();
+        int event = kat.getInt();
+        TeamAVL AVL = new TeamAVL();
+        TeamV1 [] array = new TeamV1 [num + 1];
+
+        for (int i = 0;i < num;i++){
+            TeamV1 team = new TeamV1(i+1);
+            array[i+1] = team;
+            AVL.insert(team);
+        }
+
+        for (int j = 0;j < event;j++){
+            int id = kat.getInt();
+            int cost = kat.getInt();
+            // update the team score,penalty
+            // team is stored in array
+            AVL.delete(array[id]);
+            array[id].solvedproblem(cost);
+            AVL.insert(array[id]);
+            kat.println(AVL.rank(array[1]));
+        }
+
+        kat.close();
+    }
+}
+
+
+class Kattio extends PrintWriter {
+    public Kattio(InputStream i) {
+        super(new BufferedOutputStream(System.out));
+        r = new BufferedReader(new InputStreamReader(i));
+    }
+    public Kattio(InputStream i, OutputStream o) {
+        super(new BufferedOutputStream(o));
+        r = new BufferedReader(new InputStreamReader(i));
+    }
+
+    public boolean hasMoreTokens() {
+        return peekToken() != null;
+    }
+
+    public int getInt() {
+        return Integer.parseInt(nextToken());
+    }
+
+    public double getDouble() {
+        return Double.parseDouble(nextToken());
+    }
+
+    public long getLong() {
+        return Long.parseLong(nextToken());
+    }
+
+    public String getWord() {
+        return nextToken();
+    }
+
+
+
+    private BufferedReader r;
+    private String line;
+    private StringTokenizer st;
+    private String token;
+
+    private String peekToken() {
+        if (token == null)
+            try {
+                while (st == null || !st.hasMoreTokens()) {
+                    line = r.readLine();
+                    if (line == null) return null;
+                    st = new StringTokenizer(line);
+                }
+                token = st.nextToken();
+            } catch (IOException e) { }
+        return token;
+    }
+
+    private String nextToken() {
+        String ans = peekToken();
+        token = null;
+        return ans;
+    }
+}
